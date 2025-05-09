@@ -1,0 +1,172 @@
+﻿@page "/"
+@using EventEase
+@inject NavigationManager Navigation
+@inject EventService EventService
+
+@using System.ComponentModel.DataAnnotations
+
+@inject UserSession UserSession
+
+<h1>Event Showcase</h1>
+
+<h2>Add a New Event</h2>
+<div class="form-container">
+<EditForm Model="newEvent" OnValidSubmit="AddEvent">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <InputText id="name" @bind-Value="newEvent.Name" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newEvent.Name)" />
+    </div>
+
+    <div class="form-group">
+        <label for="date">Date:</label>
+        <InputDate id="date" @bind-Value="newEvent.Date" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newEvent.Date)" />
+    </div>
+
+    <div class="form-group">
+        <label for="location">Location:</label>
+        <InputText id="location" @bind-Value="newEvent.Location" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newEvent.Location)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Event</button>
+</EditForm>
+</div>
+
+@if (events.Any())
+{
+    <div class="event-list">
+        @foreach (var eventItem in EventService.Events)
+        {
+             <div class="event-item">
+                <EventCard Event="eventItem" />
+                <p>Attendance: @eventItem.GetAttendanceCount()</p>
+                <button class="btn btn-primary" @onclick="() => NavigateToRegistration(eventItem.Id)">Join Event</button>
+                <button class="btn btn-secondary" @onclick="() => TrackEvent(eventItem)">Track Event</button>
+                <button class="btn btn-danger" @onclick="() => RemoveEvent(eventItem)">Remove</button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>No events available.</p>
+}
+
+<h2>Tracked Events</h2>
+@if (UserSession.TrackedEvents.Any())
+{
+    <ul class="event-list">
+        @foreach (var trackedEvent in UserSession.TrackedEvents)
+        {
+            <li>
+                <h3>@trackedEvent.Name</h3>
+                <p><strong>Date:</strong> @trackedEvent.Date.ToString("MMMM dd, yyyy")</p>
+                <p><strong>Location:</strong> @trackedEvent.Location</p>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No events are being tracked.</p>
+}
+
+@code {
+    public static List<Event> events = new List<Event>
+    {
+        new Event
+        {
+            Id = 1,
+            Name = "Matthew Good Concert",
+            Date = new DateTime(2025, 6, 15),
+            Location = "Toronto, ON",
+        },
+        new Event
+        {
+            Id = 2,
+            Name = "Jazz Night",
+            Date = new DateTime(2025, 7, 10),
+            Location = "Montreal, QC",
+        },
+        new Event
+        {
+            Id = 3,
+            Name = "Rock Festival",
+            Date = new DateTime(2025, 8, 20),
+            Location = "Vancouver, BC",
+        }
+    };
+
+    private Event newEvent = new Event
+    {
+        Date = DateTime.Now
+    };
+
+private void AddEvent()
+{
+    newEvent.Id = EventService.Events.Count + 1; // Assign a new ID
+    EventService.Events.Add(new Event
+    {
+        Id = newEvent.Id,
+        Name = newEvent.Name,
+        Date = newEvent.Date,
+        Location = newEvent.Location,
+        // Ensure Attendees is initialized
+        Attendees = new List<Customer>()
+    });
+
+    // Reset the form
+    newEvent = new Event
+    {
+        Date = DateTime.Now
+    };
+
+    // Notify state change
+    EventService.NotifyStateChanged();
+}
+
+    private void TrackEvent(Event eventItem)
+    {
+        UserSession.TrackEvent(eventItem);
+    }
+
+    private void JoinEvent(Event eventItem)
+    {
+        // Simulate a new customer joining the event
+        var newCustomer = new Customer
+        {
+           Id = eventItem.GetAttendanceCount() + 1,
+            Name = $"Customer {eventItem.GetAttendanceCount() + 1}",
+            PhoneNumber = "123-456-7890",
+            Email = $"customer{eventItem.GetAttendanceCount() + 1}@example.com"
+
+        };
+
+        // Add the customer to the event's attendees list
+        eventItem.AddAttendee(newCustomer);
+    }
+
+    private void RemoveEvent(Event eventItem)
+    {
+        EventService.Events.Remove(eventItem);
+    }
+
+    private void NavigateToRegistration(int eventId)
+    {
+        Navigation.NavigateTo($"/reg/{eventId}");
+    }
+        protected override void OnInitialized()
+    {
+        EventService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        EventService.OnChange -= StateHasChanged;
+    }
+}

@@ -1,0 +1,32 @@
+@page "/tracker"
+@using EventEase
+@inject UserSession UserSession
+
+<h1>Tracked Events</h1>
+
+@if (UserSession.TrackedEvents.Any())
+{
+    <ul class="tracked-events">
+        @foreach (var trackedEvent in UserSession.TrackedEvents)
+        {
+            <li>
+                <h3>@trackedEvent.Name</h3>
+                <p><strong>Date:</strong> @trackedEvent.Date.ToString("MMMM dd, yyyy")</p>
+                <p><strong>Location:</strong> @trackedEvent.Location</p>
+                <p><strong>Attendance:</strong> @trackedEvent.GetAttendanceCount()</p>
+                <button class="btn btn-danger" @onclick="() => RemoveTrackedEvent(trackedEvent)">Remove</button>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No events are currently being tracked.</p>
+}
+
+@code {
+    private void RemoveTrackedEvent(Event trackedEvent)
+    {
+        UserSession.TrackedEvents.Remove(trackedEvent);
+    }
+}

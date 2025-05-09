@@ -1,0 +1,71 @@
+@page "/reg/{eventId:int}"
+@using EventEase
+@using System.ComponentModel.DataAnnotations
+@inject EventService EventService
+
+<h1>Event Registration</h1>
+
+<p>Register for Event ID: @EventId</p>
+
+<div class="form-container">
+<EditForm Model="newCustomer" OnValidSubmit="RegisterCustomer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <InputText id="name" @bind-Value="newCustomer.Name" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newCustomer.Name)" />
+    </div>
+
+    <div class="form-group">
+        <label for="phoneNumber">Phone Number:</label>
+        <InputText id="phoneNumber" @bind-Value="newCustomer.PhoneNumber" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newCustomer.PhoneNumber)" />
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <InputText id="email" @bind-Value="newCustomer.Email" class="form-control input-half-width" />
+        <ValidationMessage For="@(() => newCustomer.Email)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
+</div>>
+
+@if (isRegistered)
+{
+    <p class="text-success">Registration successful for the event: @registeredEventName!</p>
+}
+
+@code {
+    private int _eventId;
+
+    [Parameter]
+    public int EventId
+    {
+        get => _eventId;
+        set => _eventId = value;
+    }
+
+    private Customer newCustomer = new Customer();
+
+    private bool isRegistered = false;
+    private string registeredEventName = string.Empty;
+
+    private void RegisterCustomer()
+    {
+    var eventItem = EventService.Events.FirstOrDefault(e => e.Id == EventId);
+    if (eventItem != null)
+    {
+        eventItem.AddAttendee(newCustomer);
+        isRegistered = true;
+        registeredEventName = eventItem.Name; // Store the event name
+        newCustomer = new Customer();
+
+        // Notify other components about the state change
+        EventService.NotifyStateChanged();
+    }
+    }
+}

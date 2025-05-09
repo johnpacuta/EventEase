@@ -1,0 +1,14 @@
+@page "/events"
+@using EventEase
+
+<div class="event-card">
+    <h3>@(Event?.Name ?? "Unnamed Event")</h3>
+    <p><strong>Date:</strong> @(Event?.Date.ToString("MMMM dd, yyyy") ?? "Unknown Date")</p>
+    <p><strong>Location:</strong> @(Event?.Location ?? "Unknown Location")</p>
+    <p><strong>Created:</strong> @(Event?.IsCreated == true ? "Yes" : "No")</p>
+</div>
+
+@code {
+    [Parameter]
+    public Event? Event { get; set; }
+}
